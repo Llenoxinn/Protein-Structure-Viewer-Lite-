@@ -1,28 +1,76 @@
 # PDB Viewer
 
-A lightweight, portfolio-grade 3D protein structure viewer built with raw Three.js (no NGL/3Dmol.js). Fetches PDB data from the RCSB PDB API and renders atoms as spheres and the backbone as tubes, color-coded by chain or atom type.
+> A lightweight, portfolio-grade 3D protein structure viewer built with raw Three.js — no NGL, Mol\*, or 3Dmol.js dependencies.
+
+![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=fff)
+![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
+![Three.js](https://img.shields.io/badge/Three.js-000000?logo=three.js&logoColor=fff)
+
+![screenshot](./docs/screenshot.png)
+
+## Features
+
+- **PDB fetch** — load any structure from the RCSB PDB by accession ID (e.g. `1CRN`, `4HHB`, `2PTC`)
+- **3D rendering** — atoms as spheres, backbone as smooth tubes, or both at once
+- **Color schemes** — CPK element coloring or per-chain distinct colors
+- **Orbit controls** — rotate, pan, and zoom with damping
+- **Atom tooltip** — hover any atom to see element, name, residue, and chain
+- **Performance LOD** — adaptive geometry resolution for large structures (>3k atoms: low-poly spheres, >8k atoms: point rendering)
 
 ## Stack
 
-- **Vite** – development server and bundler
-- **React 18** – UI framework
-- **Three.js** + **@react-three/fiber** + **@react-three/drei** – 3D rendering
-- **Tailwind CSS** – dark-themed utility-first styling
+| Tool | Purpose |
+|---|---|
+| [Vite](https://vitejs.dev) | Dev server & bundler |
+| [React 18](https://reactjs.org) | UI framework |
+| [Three.js](https://threejs.org) | 3D rendering engine |
+| [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber) | React renderer for Three.js |
+| [@react-three/drei](https://github.com/pmndrs/drei) | R3F utilities (OrbitControls, Stats) |
+| [Tailwind CSS](https://tailwindcss.com) | Dark-themed utility-first styles |
 
 ## Getting Started
 
 ```bash
+git clone <repo-url> pdb-viewer
+cd pdb-viewer
 npm install
 npm run dev
 ```
 
-## Usage
+Open `http://localhost:5173` in your browser. Type a valid PDB ID (try `1CRN`, `2PTC`, `3HHR`) and click **Load** or press Enter.
 
-1. Open the app in your browser (default `http://localhost:5173`).
-2. Enter a valid PDB ID in the input field (e.g. `1CRN`, `4HHB`, `1BNA`).
-3. Click **Load** or press Enter.
-4. The 3D structure will render in the viewport. Orbit controls allow you to rotate, pan, and zoom.
+## Project Structure
 
-## API Proxy
+```
+src/
+├── main.jsx                  # ReactDOM entry
+├── index.css                 # Tailwind directives, base reset
+├── App.jsx                   # Root: state management, layout, keyboard shortcuts
+├── components/
+│   ├── ControlPanel.jsx      # Left sidebar: search, appearance toggles, molecule info
+│   ├── MoleculeScene.jsx     # Three.js canvas: instanced spheres, backbone tubes, LOD
+│   └── AtomTooltip.jsx       # Floating info card on atom hover
+├── hooks/                    # Custom hooks (empty, ready for usePDB, etc.)
+└── utils/
+    ├── pdbParser.js          # fetchPDB, parsePDB (fixed-width ATOM/HETATM), centerAtoms
+    └── colorSchemes.js       # CPK colors, chain palette, getAtomColor, getAtomRadius
+```
 
-Requests to `/api/*` are proxied to `https://files.rcsb.org` to avoid CORS issues. The actual PDB download uses the Vite dev server proxy under the hood.
+## How It Works
+
+PDB files use a fixed-width column format defined by the wwPDB. Each `ATOM` or `HETATM` record occupies exactly 80 characters, with fields at specific offsets: record type (1–6), serial (7–11), atom name (13–16), residue name (18–20), chain ID (22), residue sequence (23–26), and x/y/z coordinates (31–54). The parser in `pdbParser.js` reads these fields via `String.slice()` — no regex, no external libraries. Coordinates are then centered at the origin so the protein sits in the middle of the scene.
+
+Rendering uses Three.js `InstancedMesh` grouped by element, which submits a single draw call per element type regardless of atom count. Each instance stores its position in `instanceMatrix` and its per-atom color in `instanceColor`, updated via `useLayoutEffect` when the color scheme changes. For large structures (>3000 atoms), sphere geometry segments drop from 8 to 6; above 8000 atoms the renderer switches to `Points` (gl.POINTS) to keep frame rates smooth.
+
+The Vite dev server proxies `/api/*` requests to `https://files.rcsb.org`, avoiding CORS restrictions during development. The backend URL is configurable via `VITE_PDB_BASE_URL` in `.env`.
+
+## Limitations
+
+- No hydrogen bond or secondary-structure display
+- No solvent-accessible surface rendering
+- Large structures (>15 000 atoms) may lag in sphere/backbone mode — the Points LOD helps but is still demanding
+- Single PDB file at a time (no superposition or alignment)
+
+## License
+
+MIT
