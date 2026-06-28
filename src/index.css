@@ -2,9 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-accent: #4ade80;
+  --color-accent-50: #f0fdf4;
+  --color-accent-100: #dcfce7;
+  --color-accent-200: #bbf7d0;
+  --color-accent-300: #86efac;
+  --color-accent-400: #4ade80;
+  --color-accent-500: #22c55e;
+  --color-accent-600: #16a34a;
+  --color-accent-700: #15803d;
+  --color-accent-800: #166534;
+  --color-accent-900: #14532d;
+}
+
+[data-accent='biology'] {
+  --color-accent: #dc2626;
+  --color-accent-50: #fef2f2;
+  --color-accent-100: #fee2e2;
+  --color-accent-200: #fecaca;
+  --color-accent-300: #fca5a5;
+  --color-accent-400: #f87171;
+  --color-accent-500: #ef4444;
+  --color-accent-600: #dc2626;
+  --color-accent-700: #b91c1c;
+  --color-accent-800: #991b1b;
+  --color-accent-900: #7f1d1d;
+}
+
+[data-accent='midnight'] {
+  --color-accent: #3b82f6;
+  --color-accent-50: #eff6ff;
+  --color-accent-100: #dbeafe;
+  --color-accent-200: #bfdbfe;
+  --color-accent-300: #93c5fd;
+  --color-accent-400: #60a5fa;
+  --color-accent-500: #3b82f6;
+  --color-accent-600: #2563eb;
+  --color-accent-700: #1d4ed8;
+  --color-accent-800: #1e40af;
+  --color-accent-900: #1e3a8a;
+}
+
 html,
 body,
 #root {
   height: 100%;
   margin: 0;
+}
+
+body {
+  @apply bg-white dark:bg-dark text-gray-800 dark:text-white/80 transition-colors duration-200;
 }

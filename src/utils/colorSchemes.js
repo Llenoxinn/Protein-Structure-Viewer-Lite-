@@ -1,3 +1,11 @@
+let customElementOverrides = {}
+let customChainOverrides = []
+
+export function setCustomColors(elements, chains) {
+  customElementOverrides = elements || {}
+  customChainOverrides = chains || []
+}
+
 export const ELEMENT_COLORS = {
   C: '#909090',
   N: '#3050F8',
@@ -23,10 +31,11 @@ const DEFAULT_ELEMENT_COLOR = '#FF69B4'
 export function getAtomColor(atom, scheme = 'element') {
   switch (scheme) {
     case 'element':
-      return ELEMENT_COLORS[atom.element] || DEFAULT_ELEMENT_COLOR
+      return customElementOverrides[atom.element] || ELEMENT_COLORS[atom.element] || DEFAULT_ELEMENT_COLOR
     case 'chain': {
       const idx = atom.chainID.charCodeAt(0) - 65
-      return CHAIN_COLORS[idx >= 0 && idx < CHAIN_COLORS.length ? idx : idx % CHAIN_COLORS.length]
+      const palette = customChainOverrides.length ? customChainOverrides : CHAIN_COLORS
+      return palette[idx >= 0 && idx < palette.length ? idx : idx % palette.length]
     }
     case 'residue': {
       let hash = 0
