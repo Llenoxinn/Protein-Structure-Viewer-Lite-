@@ -31,7 +31,7 @@ export default function App() {
     [customElementColors, customChainColors],
   )
 
-  const exportRef = useRef(null)
+  const sceneRef = useRef(null)
 
   // Apply theme & accent to <html>
   useEffect(() => {
@@ -124,9 +124,16 @@ export default function App() {
   }, [])
 
   const handleExportPNG = useCallback(() => {
-    if (exportRef.current?.downloadPNG) {
-      exportRef.current.downloadPNG()
-    }
+    sceneRef.current?.downloadPNG?.()
+  }, [])
+
+  const handleResetCamera = useCallback(() => {
+    sceneRef.current?.resetCamera?.()
+  }, [])
+
+  const handleResetColors = useCallback(() => {
+    setCustomElementColors({})
+    setCustomChainColors({})
   }, [])
 
   const handleLaunchViewer = useCallback(
@@ -153,36 +160,8 @@ export default function App() {
   }
 
   return (
-    <div className="h-full w-full flex bg-[#F7F6F3] dark:bg-dark transition-colors duration-200">
-      <ControlPanel
-        onShowOverview={() => setView('landing')}
-        pdbId={pdbId}
-        setPdbId={setPdbId}
-        onLoad={handleLoad}
-        onFileUpload={handleFileUpload}
-        loading={loading}
-        error={error}
-        colorScheme={colorScheme}
-        setColorScheme={setColorScheme}
-        renderMode={renderMode}
-        setRenderMode={setRenderMode}
-        moleculeInfo={moleculeInfo}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        accent={accent}
-        setAccent={setAccent}
-        autoRotate={autoRotate}
-        setAutoRotate={setAutoRotate}
-        atomScale={atomScale}
-        setAtomScale={setAtomScale}
-        customElementColors={customElementColors}
-        setCustomElementColors={setCustomElementColors}
-        customChainColors={customChainColors}
-        setCustomChainColors={setCustomChainColors}
-        onExportPNG={handleExportPNG}
-      />
-
-      <div className="flex-1 relative">
+    <div className="relative h-full w-full overflow-hidden bg-[#F7F6F3] dark:bg-dark transition-colors duration-200">
+      <div className="absolute inset-0">
         {atoms.length > 0 ? (
           <MoleculeScene
             atoms={atoms}
@@ -193,7 +172,7 @@ export default function App() {
             sceneBg={isDark ? '#0d0d0f' : '#F7F6F3'}
             autoRotate={autoRotate}
             atomScale={atomScale}
-            exportRef={exportRef}
+            sceneRef={sceneRef}
             onCycleColorScheme={cycleColorScheme}
             onCycleRenderMode={cycleRenderMode}
           />
@@ -227,6 +206,36 @@ export default function App() {
           </div>
         )}
       </div>
+
+      <ControlPanel
+        onShowOverview={() => setView('landing')}
+        pdbId={pdbId}
+        setPdbId={setPdbId}
+        onLoad={handleLoad}
+        onFileUpload={handleFileUpload}
+        loading={loading}
+        error={error}
+        colorScheme={colorScheme}
+        setColorScheme={setColorScheme}
+        renderMode={renderMode}
+        setRenderMode={setRenderMode}
+        moleculeInfo={moleculeInfo}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        accent={accent}
+        setAccent={setAccent}
+        autoRotate={autoRotate}
+        setAutoRotate={setAutoRotate}
+        atomScale={atomScale}
+        setAtomScale={setAtomScale}
+        customElementColors={customElementColors}
+        setCustomElementColors={setCustomElementColors}
+        customChainColors={customChainColors}
+        setCustomChainColors={setCustomChainColors}
+        onResetColors={handleResetColors}
+        onResetCamera={handleResetCamera}
+        onExportPNG={handleExportPNG}
+      />
 
       <AtomTooltip atom={hoveredAtom} />
     </div>
