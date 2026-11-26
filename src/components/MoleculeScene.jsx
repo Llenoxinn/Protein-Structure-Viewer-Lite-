@@ -195,7 +195,7 @@ function AtomPoints({ atoms, colorScheme, customColors, atomScale }) {
 }
 
 function Backbone({ atoms, colorScheme, customColors, atomScale }) {
-  const chains = useMemo(() => {
+  const curves = useMemo(() => {
     if (!atoms || atoms.length === 0) return []
     const map = new Map()
     atoms
@@ -209,24 +209,22 @@ function Backbone({ atoms, colorScheme, customColors, atomScale }) {
         map.get(a.chainID).push(a)
       })
     return Array.from(map.entries())
+      .filter(([, chainAtoms]) => chainAtoms.length >= 2)
+      .map(([chainID, chainAtoms]) => ({
+        chainID,
+        curve: new THREE.CatmullRomCurve3(chainAtoms.map((a) => new THREE.Vector3(a.x, a.y, a.z))),
+        segments: Math.max(chainAtoms.length * 2, 8),
+      }))
   }, [atoms])
 
-  return chains.map(([chainID, chainAtoms]) => {
-    if (chainAtoms.length < 2) return null
-
-    const points = chainAtoms.map((a) => new THREE.Vector3(a.x, a.y, a.z))
-    const curve = new THREE.CatmullRomCurve3(points)
-    const segments = Math.max(chainAtoms.length * 2, 8)
-
-    return (
-      <mesh key={chainID}>
-        <tubeGeometry args={[curve, segments, 0.15 * atomScale, 6, false]} />
-        <meshStandardMaterial
-          color={getAtomColor({ chainID, element: 'C', resName: '' }, colorScheme, customColors)}
-        />
-      </mesh>
-    )
-  })
+  return curves.map(({ chainID, curve, segments }) => (
+    <mesh key={chainID}>
+      <tubeGeometry args={[curve, segments, 0.15 * atomScale, 6, false]} />
+      <meshStandardMaterial
+        color={getAtomColor({ chainID, element: 'C', resName: '' }, colorScheme, customColors)}
+      />
+    </mesh>
+  ))
 }
 
 const MoleculeScene = memo(function MoleculeScene({
