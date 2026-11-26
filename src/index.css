@@ -53,10 +53,24 @@ body,
 }
 
 body {
-  font-family: 'Geist Sans', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-family: 'Outfit', 'Geist Sans', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   @apply bg-[#FBFBFA] dark:bg-dark text-[#111111] dark:text-[#EDEDEE] transition-colors duration-200;
+}
+
+.spin-fast {
+  animation: spin 650ms linear infinite;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-hover {
+    transition: transform 220ms var(--ease-out), border-color 180ms ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px);
+  }
 }
 
 code,
