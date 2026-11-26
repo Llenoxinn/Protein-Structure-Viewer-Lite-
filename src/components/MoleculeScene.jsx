@@ -1,15 +1,47 @@
 import { useMemo, useLayoutEffect, useRef, useCallback, useEffect, memo } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls, Stats, Html } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { getAtomColor, getAtomRadius } from '../utils/colorSchemes'
 
-function ExportHelper({ exportRef }) {
-  const { gl } = useThree()
+const CAMERA_FOV = 45
+
+function computeFitDistance(atoms) {
+  if (!atoms || atoms.length === 0) return 50
+  let maxR2 = 0
+  for (let i = 0; i < atoms.length; i++) {
+    const a = atoms[i]
+    const r2 = a.x * a.x + a.y * a.y + a.z * a.z
+    if (r2 > maxR2) maxR2 = r2
+  }
+  const radius = Math.max(Math.sqrt(maxR2), 6)
+  const halfFovRad = THREE.MathUtils.degToRad(CAMERA_FOV / 2)
+  return (radius / Math.sin(halfFovRad)) * 1.18
+}
+
+function SceneController({ fitDistance, sceneRef, onCycleColorScheme, onCycleRenderMode }) {
+  const { gl, scene, camera, controls } = useThree()
+
+  const resetCamera = useCallback(() => {
+    camera.position.set(0, 0, fitDistance)
+    camera.lookAt(0, 0, 0)
+    if (controls) {
+      controls.target.set(0, 0, 0)
+      controls.update()
+    }
+  }, [camera, controls, fitDistance])
+
+  // Auto-frame whenever a new structure changes the bounding radius
   useEffect(() => {
-    if (exportRef) {
-      exportRef.current = {
+    resetCamera()
+  }, [resetCamera])
+
+  useEffect(() => {
+    if (sceneRef) {
+      sceneRef.current = {
+        resetCamera,
         downloadPNG: () => {
+          gl.render(scene, camera)
           const link = document.createElement('a')
           link.download = 'structure.png'
           link.href = gl.domElement.toDataURL('image/png')
@@ -20,26 +52,21 @@ function ExportHelper({ exportRef }) {
       }
     }
     return () => {
-      if (exportRef) exportRef.current = null
+      if (sceneRef) sceneRef.current = null
     }
-  }, [gl, exportRef])
-  return null
-}
-
-function SceneUI({ autoRotate, onCycleColorScheme, onCycleRenderMode, onResetCamera }) {
-  const { camera, controls } = useThree()
-
-  const resetCamera = useCallback(() => {
-    camera.position.set(0, 0, 50)
-    if (controls) {
-      controls.target.set(0, 0, 0)
-      controls.update()
-    }
-    onResetCamera?.()
-  }, [camera, controls, onResetCamera])
+  }, [gl, scene, camera, sceneRef, resetCamera])
 
   useEffect(() => {
     const handler = (e) => {
+      if (
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey ||
+        e.target?.isContentEditable ||
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target?.tagName)
+      ) {
+        return
+      }
       if (e.key === 'r' || e.key === 'R') resetCamera()
       if (e.key === 'e' || e.key === 'E') onCycleColorScheme?.()
       if (e.key === 'm' || e.key === 'M') onCycleRenderMode?.()
@@ -48,25 +75,14 @@ function SceneUI({ autoRotate, onCycleColorScheme, onCycleRenderMode, onResetCam
     return () => window.removeEventListener('keydown', handler)
   }, [resetCamera, onCycleColorScheme, onCycleRenderMode])
 
-  return (
-    <Html fullscreen>
-      <div className="absolute top-3 right-3 flex gap-2 z-10">
-        <button
-          onClick={resetCamera}
-          className="px-2.5 py-1 text-[10px] rounded bg-white/10 dark:bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
-        >
-          Reset Camera
-        </button>
-      </div>
-    </Html>
-  )
+  return null
 }
 
-function AtomGroup({ atoms, radius, colorScheme, atomScale, onAtomHover, onAtomClick, sphereSegs }) {
+function AtomGroup({ atoms, radius, colorScheme, customColors, atomScale, onAtomHover, sphereSegs }) {
   const ref = useRef()
   const count = atoms.length
   const r = radius * atomScale
-  const segs = sphereSegs || 8
+  const segs = sphereSegs || 20
 
   useLayoutEffect(() => {
     const mesh = ref.current
@@ -79,30 +95,30 @@ function AtomGroup({ atoms, radius, colorScheme, atomScale, onAtomHover, onAtomC
       dummy.position.set(atom.x, atom.y, atom.z)
       dummy.updateMatrix()
       mesh.setMatrixAt(i, dummy.matrix)
-      color.set(getAtomColor(atom, colorScheme))
+      color.set(getAtomColor(atom, colorScheme, customColors))
       mesh.setColorAt(i, color)
     })
 
     mesh.instanceMatrix.needsUpdate = true
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
-  }, [atoms, colorScheme, count])
+  }, [atoms, colorScheme, customColors, count])
 
-  const handlePointerOver = useCallback((e) => {
-    e.stopPropagation()
-    const atom = atoms[e.instanceId]
-    if (atom && onAtomHover) onAtomHover(atom)
-  }, [atoms, onAtomHover])
+  const handlePointerOver = useCallback(
+    (e) => {
+      e.stopPropagation()
+      const atom = atoms[e.instanceId]
+      if (atom && onAtomHover) onAtomHover(atom)
+    },
+    [atoms, onAtomHover],
+  )
 
-  const handlePointerOut = useCallback((e) => {
-    e.stopPropagation()
-    if (onAtomHover) onAtomHover(null)
-  }, [onAtomHover])
-
-  const handleClick = useCallback((e) => {
-    e.stopPropagation()
-    const atom = atoms[e.instanceId]
-    if (atom && onAtomClick) onAtomClick(atom)
-  }, [atoms, onAtomClick])
+  const handlePointerOut = useCallback(
+    (e) => {
+      e.stopPropagation()
+      if (onAtomHover) onAtomHover(null)
+    },
+    [onAtomHover],
+  )
 
   if (count === 0) return null
 
@@ -110,17 +126,22 @@ function AtomGroup({ atoms, radius, colorScheme, atomScale, onAtomHover, onAtomC
     <instancedMesh
       ref={ref}
       args={[null, null, count]}
+      frustumCulled={false}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
-      onClick={handleClick}
     >
       <sphereGeometry args={[r, segs, segs]} />
-      <meshStandardMaterial />
+      <meshPhysicalMaterial
+        roughness={0.32}
+        metalness={0.08}
+        clearcoat={0.25}
+        clearcoatRoughness={0.28}
+      />
     </instancedMesh>
   )
 }
 
-function AtomSpheres({ atoms, colorScheme, atomScale, onAtomHover, onAtomClick, sphereSegs }) {
+function AtomSpheres({ atoms, colorScheme, customColors, atomScale, onAtomHover, sphereSegs }) {
   const groups = useMemo(() => {
     if (!atoms || atoms.length === 0) return []
     const map = new Map()
@@ -138,15 +159,15 @@ function AtomSpheres({ atoms, colorScheme, atomScale, onAtomHover, onAtomClick, 
       atoms={groupAtoms}
       radius={getAtomRadius(element)}
       colorScheme={colorScheme}
+      customColors={customColors}
       atomScale={atomScale}
       onAtomHover={onAtomHover}
-      onAtomClick={onAtomClick}
       sphereSegs={sphereSegs}
     />
   ))
 }
 
-function AtomPoints({ atoms, colorScheme, atomScale }) {
+function AtomPoints({ atoms, colorScheme, customColors, atomScale }) {
   const ref = useRef()
 
   useLayoutEffect(() => {
@@ -161,7 +182,7 @@ function AtomPoints({ atoms, colorScheme, atomScale }) {
       pos[i * 3] = atom.x
       pos[i * 3 + 1] = atom.y
       pos[i * 3 + 2] = atom.z
-      c.set(getAtomColor(atom, colorScheme))
+      c.set(getAtomColor(atom, colorScheme, customColors))
       colors[i * 3] = c.r
       colors[i * 3 + 1] = c.g
       colors[i * 3 + 2] = c.b
@@ -171,20 +192,20 @@ function AtomPoints({ atoms, colorScheme, atomScale }) {
     points.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
     points.geometry.attributes.position.needsUpdate = true
     points.geometry.attributes.color.needsUpdate = true
-  }, [atoms, colorScheme])
+  }, [atoms, colorScheme, customColors])
 
   if (!atoms.length) return null
 
   return (
-    <points ref={ref}>
+    <points ref={ref} frustumCulled={false}>
       <bufferGeometry />
-      <pointsMaterial size={0.4 * atomScale} vertexColors sizeAttenuation />
+      <pointsMaterial size={0.55 * atomScale} vertexColors sizeAttenuation />
     </points>
   )
 }
 
-function Backbone({ atoms, colorScheme, atomScale }) {
-  const chains = useMemo(() => {
+function Backbone({ atoms, colorScheme, customColors, atomScale }) {
+  const curves = useMemo(() => {
     if (!atoms || atoms.length === 0) return []
     const map = new Map()
     atoms
@@ -198,80 +219,91 @@ function Backbone({ atoms, colorScheme, atomScale }) {
         map.get(a.chainID).push(a)
       })
     return Array.from(map.entries())
+      .filter(([, chainAtoms]) => chainAtoms.length >= 2)
+      .map(([chainID, chainAtoms]) => ({
+        chainID,
+        curve: new THREE.CatmullRomCurve3(chainAtoms.map((a) => new THREE.Vector3(a.x, a.y, a.z))),
+        segments: Math.min(Math.max(chainAtoms.length * 6, 24), 1200),
+      }))
   }, [atoms])
 
-  return chains.map(([chainID, chainAtoms]) => {
-    if (chainAtoms.length < 2) return null
-
-    const points = chainAtoms.map((a) => new THREE.Vector3(a.x, a.y, a.z))
-    const curve = new THREE.CatmullRomCurve3(points)
-    const segments = Math.max(chainAtoms.length * 2, 8)
-
-    return (
-      <mesh key={chainID}>
-        <tubeGeometry args={[curve, segments, 0.15 * atomScale, 6, false]} />
-        <meshStandardMaterial
-          color={getAtomColor({ chainID, element: 'C', resName: '' }, colorScheme)}
-        />
-      </mesh>
-    )
-  })
+  return curves.map(({ chainID, curve, segments }) => (
+    <mesh key={chainID}>
+      <tubeGeometry args={[curve, segments, 0.22 * atomScale, 12, false]} />
+      <meshStandardMaterial
+        color={getAtomColor({ chainID, element: 'C', resName: '' }, colorScheme, customColors)}
+        roughness={0.35}
+        metalness={0.08}
+      />
+    </mesh>
+  ))
 }
 
 const MoleculeScene = memo(function MoleculeScene({
   atoms,
   colorScheme = 'element',
+  customColors,
   renderMode = 'both',
   onAtomHover,
-  onAtomClick,
   sceneBg = '#0d0d0f',
   autoRotate = false,
   atomScale = 1,
-  exportRef,
+  sceneRef,
   onCycleColorScheme,
   onCycleRenderMode,
-  onResetCamera,
 }) {
   const hasAtoms = atoms && atoms.length > 0
   const showSpheres = hasAtoms && (renderMode === 'spheres' || renderMode === 'both')
   const showBackbone = hasAtoms && (renderMode === 'backbone' || renderMode === 'both')
 
   const usePoints = hasAtoms && atoms.length > 8000
-  const lowPoly = hasAtoms && atoms.length > 3000
-  const sphereSegs = lowPoly ? 6 : 8
+  const sphereSegs = !hasAtoms ? 20 : atoms.length > 4000 ? 10 : atoms.length > 1500 ? 16 : 24
+  const fitDistance = useMemo(() => computeFitDistance(atoms), [atoms])
 
   return (
     <Canvas
-      camera={{ fov: 45, position: [0, 0, 50], near: 0.1, far: 500 }}
+      className="w-full h-full block"
+      camera={{ fov: CAMERA_FOV, position: [0, 0, fitDistance], near: 0.1, far: 2000 }}
       dpr={[1, 2]}
-      gl={{ antialias: true, shadows: false }}
-      style={{ background: sceneBg }}
+      gl={{
+        antialias: true,
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 1.05,
+      }}
     >
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[20, 20, 20]} intensity={1.2} />
-      <OrbitControls enableDamping dampingFactor={0.15} autoRotate={autoRotate} autoRotateSpeed={2} />
+      <color attach="background" args={[sceneBg]} />
+      <hemisphereLight args={['#ffffff', '#1e1e28', 0.65]} />
+      <directionalLight position={[25, 30, 25]} intensity={1.35} />
+      <directionalLight position={[-25, -15, -20]} intensity={0.55} color="#b8d4ff" />
+      <OrbitControls
+        makeDefault
+        enableDamping
+        dampingFactor={0.12}
+        autoRotate={autoRotate}
+        autoRotateSpeed={1.6}
+      />
       {showSpheres && !usePoints && (
         <AtomSpheres
           atoms={atoms}
           colorScheme={colorScheme}
+          customColors={customColors}
           atomScale={atomScale}
           onAtomHover={onAtomHover}
-          onAtomClick={onAtomClick}
           sphereSegs={sphereSegs}
         />
       )}
       {showSpheres && usePoints && (
-        <AtomPoints atoms={atoms} colorScheme={colorScheme} atomScale={atomScale} />
+        <AtomPoints atoms={atoms} colorScheme={colorScheme} customColors={customColors} atomScale={atomScale} />
       )}
-      {showBackbone && <Backbone atoms={atoms} colorScheme={colorScheme} atomScale={atomScale} />}
-      <SceneUI
-        autoRotate={autoRotate}
+      {showBackbone && (
+        <Backbone atoms={atoms} colorScheme={colorScheme} customColors={customColors} atomScale={atomScale} />
+      )}
+      <SceneController
+        fitDistance={fitDistance}
+        sceneRef={sceneRef}
         onCycleColorScheme={onCycleColorScheme}
         onCycleRenderMode={onCycleRenderMode}
-        onResetCamera={onResetCamera}
       />
-      <ExportHelper exportRef={exportRef} />
-      {import.meta.env.DEV && <Stats />}
     </Canvas>
   )
 })

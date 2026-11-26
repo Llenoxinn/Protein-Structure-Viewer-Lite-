@@ -6,7 +6,7 @@
 ![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
 ![Three.js](https://img.shields.io/badge/Three.js-000000?logo=three.js&logoColor=fff)
 
-![screenshot](./docs/screenshot.png)
+![screenshot](./docs/screenshot.jpg)
 
 ## Features
 
@@ -56,10 +56,9 @@ src/
 │   ├── ControlPanel.jsx      # Left sidebar: search, file upload, appearance, custom colors, export
 │   ├── MoleculeScene.jsx     # Three.js canvas: instanced spheres, backbone tubes, LOD, export helper
 │   └── AtomTooltip.jsx       # Floating info card on atom hover
-├── hooks/                    # Custom hooks (empty, ready for usePDB, etc.)
 └── utils/
     ├── pdbParser.js          # fetchPDB, parsePDB (fixed-width ATOM/HETATM), centerAtoms
-    └── colorSchemes.js       # CPK colors, chain palette, getAtomColor, getAtomRadius, custom overrides
+    └── colorSchemes.js       # CPK colors, chain palette, getAtomColor, getAtomRadius
 ```
 
 ## How It Works
@@ -68,9 +67,9 @@ PDB files use a fixed-width column format defined by the wwPDB. Each `ATOM` or `
 
 Rendering uses Three.js `InstancedMesh` grouped by element, which submits a single draw call per element type regardless of atom count. Each instance stores its position in `instanceMatrix` and its per-atom color in `instanceColor`, updated via `useLayoutEffect` when the color scheme changes. For large structures (>3000 atoms), sphere geometry segments drop from 8 to 6; above 8000 atoms the renderer switches to `Points` (gl.POINTS) to keep frame rates smooth.
 
-The theme system uses CSS custom properties scoped to `[data-accent="..."]` for accent colors and Tailwind's `dark:` class variant for light/dark switching. Custom colors are injected into `colorSchemes.js` at runtime via a module-level `setCustomColors()` function, allowing live color pickers in the sidebar without React re-render overhead.
+The theme system uses CSS custom properties scoped to `[data-accent="..."]` for accent colors and Tailwind's `dark:` class variant for light/dark switching. Custom element and chain color overrides are passed into `MoleculeScene` and applied during instanced color updates.
 
-The Vite dev server proxies `/api/*` requests to `https://files.rcsb.org`, avoiding CORS restrictions during development. The backend URL is configurable via `VITE_PDB_BASE_URL` in `.env`. File uploads skip the network entirely, running the same `parsePDB` + `centerAtoms` pipeline on the local file contents.
+Structures are fetched directly from `https://files.rcsb.org` (configurable via `VITE_PDB_BASE_URL` in `.env`). File uploads skip the network entirely, running the same `parsePDB` + `centerAtoms` pipeline on the local file contents.
 
 ## Limitations
 

@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import ControlPanel from './components/ControlPanel'
 import MoleculeScene from './components/MoleculeScene'
 import AtomTooltip from './components/AtomTooltip'
+import LandingPage from './components/LandingPage'
 import { fetchPDB, parsePDB, centerAtoms } from './utils/pdbParser'
-import { setCustomColors } from './utils/colorSchemes'
 
 export default function App() {
+  const [view, setView] = useState('viewer')
   const [pdbId, setPdbId] = useState('1CRN')
   const [atoms, setAtoms] = useState([])
   const [moleculeInfo, setMoleculeInfo] = useState(null)
@@ -23,9 +24,14 @@ export default function App() {
   const [atomScale, setAtomScale] = useState(1)
   const [autoRotate, setAutoRotate] = useState(false)
   const [customElementColors, setCustomElementColors] = useState({})
-  const [customChainColors, setCustomChainColors] = useState([])
+  const [customChainColors, setCustomChainColors] = useState({})
 
-  const exportRef = useRef(null)
+  const customColors = useMemo(
+    () => ({ elements: customElementColors, chains: customChainColors }),
+    [customElementColors, customChainColors],
+  )
+
+  const sceneRef = useRef(null)
 
   // Apply theme & accent to <html>
   useEffect(() => {
@@ -36,34 +42,35 @@ export default function App() {
     document.documentElement.setAttribute('data-accent', accent)
   }, [accent])
 
-  // Push custom colors to colorSchemes module
-  useEffect(() => {
-    setCustomColors(customElementColors, customChainColors)
-  }, [customElementColors, customChainColors])
+  const handleLoad = useCallback(
+    async (overrideId) => {
+      const targetId = (typeof overrideId === 'string' ? overrideId : pdbId).trim()
+      if (!targetId) return
 
-  const handleLoad = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    setHoveredAtom(null)
+      setLoading(true)
+      setError(null)
+      setHoveredAtom(null)
 
-    try {
-      const raw = await fetchPDB(pdbId)
-      const parsed = parsePDB(raw)
-      const centered = centerAtoms(parsed.atoms)
-      setAtoms(centered)
-      setMoleculeInfo({
-        atomCount: parsed.atomCount,
-        residueCount: parsed.residueCount,
-        chains: [...parsed.chains],
-      })
-    } catch (err) {
-      setError(err.message)
-      setAtoms([])
-      setMoleculeInfo(null)
-    }
+      try {
+        const raw = await fetchPDB(targetId)
+        const parsed = parsePDB(raw)
+        const centered = centerAtoms(parsed.atoms)
+        setAtoms(centered)
+        setMoleculeInfo({
+          atomCount: parsed.atomCount,
+          residueCount: parsed.residueCount,
+          chains: [...parsed.chains],
+        })
+      } catch (err) {
+        setError(err.message)
+        setAtoms([])
+        setMoleculeInfo(null)
+      }
 
-    setLoading(false)
-  }, [pdbId])
+      setLoading(false)
+    },
+    [pdbId],
+  )
 
   useEffect(() => {
     handleLoad()
@@ -117,20 +124,91 @@ export default function App() {
   }, [])
 
   const handleExportPNG = useCallback(() => {
-    if (exportRef.current?.downloadPNG) {
-      exportRef.current.downloadPNG()
-    }
+    sceneRef.current?.downloadPNG?.()
   }, [])
 
-  const handleAtomClick = useCallback((atom) => {
-    console.log(atom)
+  const handleResetCamera = useCallback(() => {
+    sceneRef.current?.resetCamera?.()
   }, [])
+
+  const handleResetColors = useCallback(() => {
+    setCustomElementColors({})
+    setCustomChainColors({})
+  }, [])
+
+  const handleLaunchViewer = useCallback(
+    (targetId) => {
+      setView('viewer')
+      if (typeof targetId === 'string' && targetId.trim()) {
+        setPdbId(targetId)
+        handleLoad(targetId)
+      }
+    },
+    [handleLoad],
+  )
 
   const isDark = theme === 'dark'
 
+  if (view === 'landing') {
+    return (
+      <LandingPage
+        onLaunchViewer={handleLaunchViewer}
+        theme={theme}
+        toggleTheme={toggleTheme}
+      />
+    )
+  }
+
   return (
-    <div className="h-full w-full flex bg-white dark:bg-dark transition-colors duration-200">
+    <div className="relative h-full w-full overflow-hidden bg-[#F7F6F3] dark:bg-dark transition-colors duration-200">
+      <div className="absolute inset-0">
+        {atoms.length > 0 ? (
+          <MoleculeScene
+            atoms={atoms}
+            colorScheme={colorScheme}
+            customColors={customColors}
+            renderMode={renderMode}
+            onAtomHover={setHoveredAtom}
+            sceneBg={isDark ? '#0d0d0f' : '#F7F6F3'}
+            autoRotate={autoRotate}
+            atomScale={atomScale}
+            sceneRef={sceneRef}
+            onCycleColorScheme={cycleColorScheme}
+            onCycleRenderMode={cycleRenderMode}
+          />
+        ) : (
+          !loading && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <p className="text-xs text-[#787774] dark:text-white/40">
+                Enter a PDB ID or upload a file to view a structure
+              </p>
+            </div>
+          )
+        )}
+
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 dark:bg-dark/60 z-40">
+            <svg
+              className="w-6 h-6 text-accent spin-fast"
+              viewBox="0 0 16 16"
+              fill="none"
+            >
+              <circle
+                cx="8"
+                cy="8"
+                r="6"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeDasharray="28"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        )}
+      </div>
+
       <ControlPanel
+        onShowOverview={() => setView('landing')}
         pdbId={pdbId}
         setPdbId={setPdbId}
         onLoad={handleLoad}
@@ -154,56 +232,12 @@ export default function App() {
         setCustomElementColors={setCustomElementColors}
         customChainColors={customChainColors}
         setCustomChainColors={setCustomChainColors}
+        onResetColors={handleResetColors}
+        onResetCamera={handleResetCamera}
         onExportPNG={handleExportPNG}
       />
 
-      <div className="flex-1 relative">
-        {atoms.length > 0 ? (
-          <MoleculeScene
-            atoms={atoms}
-            colorScheme={colorScheme}
-            renderMode={renderMode}
-            onAtomHover={setHoveredAtom}
-            onAtomClick={handleAtomClick}
-            sceneBg={isDark ? '#0d0d0f' : '#f8f9fa'}
-            autoRotate={autoRotate}
-            atomScale={atomScale}
-            exportRef={exportRef}
-            onCycleColorScheme={cycleColorScheme}
-            onCycleRenderMode={cycleRenderMode}
-          />
-        ) : (
-          !loading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <p className="text-xs text-gray-400 dark:text-white/20">
-                Enter a PDB ID to load a structure
-              </p>
-            </div>
-          )
-        )}
-
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 dark:bg-dark/60 z-40">
-            <svg
-              className="w-6 h-6 text-accent animate-spin"
-              viewBox="0 0 16 16"
-              fill="none"
-            >
-              <circle
-                cx="8"
-                cy="8"
-                r="6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeDasharray="28"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
-        )}
-      </div>
-
-      <AtomTooltip atom={hoveredAtom} theme={theme} />
+      <AtomTooltip atom={hoveredAtom} />
     </div>
   )
 }
