@@ -40,29 +40,35 @@ export default function App() {
     document.documentElement.setAttribute('data-accent', accent)
   }, [accent])
 
-  const handleLoad = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    setHoveredAtom(null)
+  const handleLoad = useCallback(
+    async (overrideId) => {
+      const targetId = (typeof overrideId === 'string' ? overrideId : pdbId).trim()
+      if (!targetId) return
 
-    try {
-      const raw = await fetchPDB(pdbId)
-      const parsed = parsePDB(raw)
-      const centered = centerAtoms(parsed.atoms)
-      setAtoms(centered)
-      setMoleculeInfo({
-        atomCount: parsed.atomCount,
-        residueCount: parsed.residueCount,
-        chains: [...parsed.chains],
-      })
-    } catch (err) {
-      setError(err.message)
-      setAtoms([])
-      setMoleculeInfo(null)
-    }
+      setLoading(true)
+      setError(null)
+      setHoveredAtom(null)
 
-    setLoading(false)
-  }, [pdbId])
+      try {
+        const raw = await fetchPDB(targetId)
+        const parsed = parsePDB(raw)
+        const centered = centerAtoms(parsed.atoms)
+        setAtoms(centered)
+        setMoleculeInfo({
+          atomCount: parsed.atomCount,
+          residueCount: parsed.residueCount,
+          chains: [...parsed.chains],
+        })
+      } catch (err) {
+        setError(err.message)
+        setAtoms([])
+        setMoleculeInfo(null)
+      }
+
+      setLoading(false)
+    },
+    [pdbId],
+  )
 
   useEffect(() => {
     handleLoad()

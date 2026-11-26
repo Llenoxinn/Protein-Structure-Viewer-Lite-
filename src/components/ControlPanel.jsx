@@ -58,7 +58,7 @@ export default function ControlPanel({
       const id = e.target.value
       if (id) {
         setPdbId(id)
-        setTimeout(onLoad, 0)
+        onLoad(id)
       }
       e.target.value = ''
     },
@@ -118,7 +118,7 @@ export default function ControlPanel({
           type="text"
           value={pdbId}
           onChange={(e) => setPdbId(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onLoad()}
+          onKeyDown={(e) => !loading && e.key === 'Enter' && onLoad()}
           placeholder="e.g. 1CRN"
           className="w-full px-3 py-2 rounded border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-800 dark:text-white/80 placeholder-gray-400 dark:placeholder-white/20 outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30 transition-colors uppercase text-xs"
         />
@@ -138,7 +138,8 @@ export default function ControlPanel({
         {/* Quick examples */}
         <select
           onChange={handleExampleSelect}
-          className="w-full px-3 py-1.5 rounded border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-white/30 text-[10px] outline-none cursor-pointer appearance-none"
+          disabled={loading}
+          className="w-full px-3 py-1.5 rounded border border-gray-300 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-white/30 text-[10px] outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed appearance-none"
         >
           <option value="">Quick examples …</option>
           {PDB_EXAMPLES.map((ex) => (
