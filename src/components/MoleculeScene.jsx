@@ -1,14 +1,24 @@
 import { useMemo, useLayoutEffect, useRef, useCallback, useEffect, memo } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls, Stats, Html } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { getAtomColor, getAtomRadius } from '../utils/colorSchemes'
 
-function ExportHelper({ exportRef }) {
-  const { gl, scene, camera } = useThree()
+function SceneController({ sceneRef, onCycleColorScheme, onCycleRenderMode }) {
+  const { gl, scene, camera, controls } = useThree()
+
+  const resetCamera = useCallback(() => {
+    camera.position.set(0, 0, 50)
+    if (controls) {
+      controls.target.set(0, 0, 0)
+      controls.update()
+    }
+  }, [camera, controls])
+
   useEffect(() => {
-    if (exportRef) {
-      exportRef.current = {
+    if (sceneRef) {
+      sceneRef.current = {
+        resetCamera,
         downloadPNG: () => {
           gl.render(scene, camera)
           const link = document.createElement('a')
@@ -21,22 +31,9 @@ function ExportHelper({ exportRef }) {
       }
     }
     return () => {
-      if (exportRef) exportRef.current = null
+      if (sceneRef) sceneRef.current = null
     }
-  }, [gl, scene, camera, exportRef])
-  return null
-}
-
-function SceneUI({ onCycleColorScheme, onCycleRenderMode }) {
-  const { camera, controls } = useThree()
-
-  const resetCamera = useCallback(() => {
-    camera.position.set(0, 0, 50)
-    if (controls) {
-      controls.target.set(0, 0, 0)
-      controls.update()
-    }
-  }, [camera, controls])
+  }, [gl, scene, camera, sceneRef, resetCamera])
 
   useEffect(() => {
     const handler = (e) => {
@@ -57,20 +54,7 @@ function SceneUI({ onCycleColorScheme, onCycleRenderMode }) {
     return () => window.removeEventListener('keydown', handler)
   }, [resetCamera, onCycleColorScheme, onCycleRenderMode])
 
-  return (
-    <Html fullscreen>
-      <div className="pointer-events-none absolute top-3 right-3 flex gap-2 z-10">
-        <button
-          type="button"
-          onClick={resetCamera}
-          className="btn-press pointer-events-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-md border border-[#EAEAEA] dark:border-white/10 bg-white/90 dark:bg-[#161619]/85 backdrop-blur-sm text-[#2F3437] dark:text-white/75 hover:text-[#111111] dark:hover:text-white hover:bg-white dark:hover:bg-[#1E1E22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
-        >
-          <span>Reset Camera</span>
-          <kbd className="kbd-key">R</kbd>
-        </button>
-      </div>
-    </Html>
-  )
+  return null
 }
 
 function AtomGroup({ atoms, radius, colorScheme, customColors, atomScale, onAtomHover, sphereSegs }) {
@@ -229,7 +213,7 @@ const MoleculeScene = memo(function MoleculeScene({
   sceneBg = '#0d0d0f',
   autoRotate = false,
   atomScale = 1,
-  exportRef,
+  sceneRef,
   onCycleColorScheme,
   onCycleRenderMode,
 }) {
@@ -265,12 +249,11 @@ const MoleculeScene = memo(function MoleculeScene({
         <AtomPoints atoms={atoms} colorScheme={colorScheme} customColors={customColors} atomScale={atomScale} />
       )}
       {showBackbone && <Backbone atoms={atoms} colorScheme={colorScheme} customColors={customColors} atomScale={atomScale} />}
-      <SceneUI
+      <SceneController
+        sceneRef={sceneRef}
         onCycleColorScheme={onCycleColorScheme}
         onCycleRenderMode={onCycleRenderMode}
       />
-      <ExportHelper exportRef={exportRef} />
-      {import.meta.env.DEV && <Stats />}
     </Canvas>
   )
 })
