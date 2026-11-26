@@ -59,12 +59,14 @@ function SceneUI({ onCycleColorScheme, onCycleRenderMode }) {
 
   return (
     <Html fullscreen>
-      <div className="absolute top-3 right-3 flex gap-2 z-10">
+      <div className="pointer-events-none absolute top-3 right-3 flex gap-2 z-10">
         <button
+          type="button"
           onClick={resetCamera}
-          className="px-2.5 py-1 text-[10px] rounded bg-black/5 text-gray-700 hover:bg-black/10 dark:bg-white/10 dark:text-white/60 dark:hover:bg-white/20 transition-colors"
+          className="btn-press pointer-events-auto inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-md border border-[#EAEAEA] dark:border-white/10 bg-white/90 dark:bg-[#161619]/85 backdrop-blur-sm text-[#2F3437] dark:text-white/75 hover:text-[#111111] dark:hover:text-white hover:bg-white dark:hover:bg-[#1E1E22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
         >
-          Reset Camera
+          <span>Reset Camera</span>
+          <kbd className="kbd-key">R</kbd>
         </button>
       </div>
     </Html>

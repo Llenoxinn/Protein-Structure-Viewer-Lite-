@@ -130,7 +130,7 @@ export default function App() {
   const isDark = theme === 'dark'
 
   return (
-    <div className="h-full w-full flex bg-white dark:bg-dark transition-colors duration-200">
+    <div className="h-full w-full flex bg-[#F7F6F3] dark:bg-dark transition-colors duration-200">
       <ControlPanel
         pdbId={pdbId}
         setPdbId={setPdbId}
@@ -166,7 +166,7 @@ export default function App() {
             customColors={customColors}
             renderMode={renderMode}
             onAtomHover={setHoveredAtom}
-            sceneBg={isDark ? '#0d0d0f' : '#f8f9fa'}
+            sceneBg={isDark ? '#0d0d0f' : '#F7F6F3'}
             autoRotate={autoRotate}
             atomScale={atomScale}
             exportRef={exportRef}
@@ -176,8 +176,8 @@ export default function App() {
         ) : (
           !loading && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <p className="text-xs text-gray-400 dark:text-white/20">
-                Enter a PDB ID to load a structure
+              <p className="text-xs text-[#787774] dark:text-white/40">
+                Enter a PDB ID or upload a file to view a structure
               </p>
             </div>
           )
