@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import ControlPanel from './components/ControlPanel'
 import MoleculeScene from './components/MoleculeScene'
 import AtomTooltip from './components/AtomTooltip'
+import LandingPage from './components/LandingPage'
 import { fetchPDB, parsePDB, centerAtoms } from './utils/pdbParser'
 
 export default function App() {
+  const [view, setView] = useState('viewer')
   const [pdbId, setPdbId] = useState('1CRN')
   const [atoms, setAtoms] = useState([])
   const [moleculeInfo, setMoleculeInfo] = useState(null)
@@ -127,11 +129,33 @@ export default function App() {
     }
   }, [])
 
+  const handleLaunchViewer = useCallback(
+    (targetId) => {
+      setView('viewer')
+      if (typeof targetId === 'string' && targetId.trim()) {
+        setPdbId(targetId)
+        handleLoad(targetId)
+      }
+    },
+    [handleLoad],
+  )
+
   const isDark = theme === 'dark'
+
+  if (view === 'landing') {
+    return (
+      <LandingPage
+        onLaunchViewer={handleLaunchViewer}
+        theme={theme}
+        toggleTheme={toggleTheme}
+      />
+    )
+  }
 
   return (
     <div className="h-full w-full flex bg-[#F7F6F3] dark:bg-dark transition-colors duration-200">
       <ControlPanel
+        onShowOverview={() => setView('landing')}
         pdbId={pdbId}
         setPdbId={setPdbId}
         onLoad={handleLoad}
@@ -186,7 +210,7 @@ export default function App() {
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 dark:bg-dark/60 z-40">
             <svg
-              className="w-6 h-6 text-accent animate-spin"
+              className="w-6 h-6 text-accent spin-fast"
               viewBox="0 0 16 16"
               fill="none"
             >

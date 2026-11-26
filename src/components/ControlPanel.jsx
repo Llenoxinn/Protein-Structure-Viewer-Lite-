@@ -20,6 +20,7 @@ const COLOR_SCHEMES = ['element', 'chain', 'residue']
 const RENDER_MODES = ['spheres', 'backbone', 'both']
 
 export default function ControlPanel({
+  onShowOverview,
   pdbId,
   setPdbId,
   onLoad,
@@ -94,24 +95,35 @@ export default function ControlPanel({
             PDB Viewer
           </span>
         </div>
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          title={isDark ? 'Switch to Light' : 'Switch to Dark'}
-          className="btn-press p-1.5 rounded-md text-[#6B6A67] dark:text-white/55 hover:text-[#111111] dark:hover:text-white hover:bg-[#F7F6F3] dark:hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
-        >
-          {isDark ? (
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="8" cy="8" r="3" />
-              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" strokeLinecap="round" />
-            </svg>
-          ) : (
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5">
-              <path d="M14 10.5A6 6 0 015.5 2 6 6 0 1014 10.5z" />
-            </svg>
+        <div className="flex items-center gap-1">
+          {onShowOverview && (
+            <button
+              type="button"
+              onClick={onShowOverview}
+              className="btn-press px-2 py-1 rounded-md text-[10px] font-medium text-[#6B6A67] dark:text-white/55 hover:text-[#111111] dark:hover:text-white hover:bg-[#F7F6F3] dark:hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+            >
+              Overview
+            </button>
           )}
-        </button>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={isDark ? 'Switch to Light' : 'Switch to Dark'}
+            className="btn-press p-1.5 rounded-md text-[#6B6A67] dark:text-white/55 hover:text-[#111111] dark:hover:text-white hover:bg-[#F7F6F3] dark:hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+          >
+            {isDark ? (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="8" cy="8" r="3" />
+                <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5">
+                <path d="M14 10.5A6 6 0 015.5 2 6 6 0 1014 10.5z" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Structure Loader */}
@@ -139,7 +151,7 @@ export default function ControlPanel({
           className="btn-press w-full flex items-center justify-center gap-2 px-3.5 py-2 rounded-md bg-[#111111] text-white hover:bg-[#2A2A2D] dark:bg-accent dark:text-[#0D0D0F] dark:hover:opacity-90 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
         >
           {loading && (
-            <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 16 16" fill="none">
+            <svg className="w-3.5 h-3.5 spin-fast" viewBox="0 0 16 16" fill="none">
               <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" strokeDasharray="28" strokeLinecap="round" />
             </svg>
           )}
