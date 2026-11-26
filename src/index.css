@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --color-accent: #4ade80;
   --color-accent-50: #f0fdf4;
   --color-accent-100: #dcfce7;
@@ -52,5 +53,91 @@ body,
 }
 
 body {
-  @apply bg-white dark:bg-dark text-gray-800 dark:text-white/80 transition-colors duration-200;
+  font-family: 'Geist Sans', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  @apply bg-[#FBFBFA] dark:bg-dark text-[#111111] dark:text-[#EDEDEE] transition-colors duration-200;
+}
+
+code,
+kbd,
+.font-mono {
+  font-family: 'Geist Mono', 'SF Mono', 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.kbd-key {
+  @apply inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded border border-[#EAEAEA] dark:border-white/15 bg-[#F7F6F3] dark:bg-white/[0.06] font-mono text-[10px] leading-none text-[#555452] dark:text-white/60;
+}
+
+/* Tactile button motion using custom ease-out */
+.btn-press {
+  transition: transform 140ms var(--ease-out), background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease;
+}
+
+.btn-press:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Tooltip enter transition */
+.tooltip-enter {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity 140ms var(--ease-out), transform 140ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(4px) scale(0.97);
+  }
+}
+
+/* Refined color swatch input */
+.color-swatch {
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.dark .color-swatch {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.color-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+/* Subtle sidebar scrollbar */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.14) transparent;
+}
+
+.dark .sidebar-scroll {
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-press,
+  .tooltip-enter {
+    transition: opacity 120ms ease, background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  }
+
+  .btn-press:active:not(:disabled) {
+    transform: none;
+  }
+
+  .tooltip-enter {
+    @starting-style {
+      opacity: 0;
+      transform: none;
+    }
+  }
 }
