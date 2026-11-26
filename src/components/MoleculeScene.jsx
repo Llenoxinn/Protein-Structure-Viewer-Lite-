@@ -62,7 +62,7 @@ function SceneUI({ autoRotate, onCycleColorScheme, onCycleRenderMode, onResetCam
   )
 }
 
-function AtomGroup({ atoms, radius, colorScheme, atomScale, onAtomHover, onAtomClick, sphereSegs }) {
+function AtomGroup({ atoms, radius, colorScheme, customColors, atomScale, onAtomHover, onAtomClick, sphereSegs }) {
   const ref = useRef()
   const count = atoms.length
   const r = radius * atomScale
@@ -79,13 +79,13 @@ function AtomGroup({ atoms, radius, colorScheme, atomScale, onAtomHover, onAtomC
       dummy.position.set(atom.x, atom.y, atom.z)
       dummy.updateMatrix()
       mesh.setMatrixAt(i, dummy.matrix)
-      color.set(getAtomColor(atom, colorScheme))
+      color.set(getAtomColor(atom, colorScheme, customColors))
       mesh.setColorAt(i, color)
     })
 
     mesh.instanceMatrix.needsUpdate = true
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
-  }, [atoms, colorScheme, count])
+  }, [atoms, colorScheme, customColors, count])
 
   const handlePointerOver = useCallback((e) => {
     e.stopPropagation()
@@ -120,7 +120,7 @@ function AtomGroup({ atoms, radius, colorScheme, atomScale, onAtomHover, onAtomC
   )
 }
 
-function AtomSpheres({ atoms, colorScheme, atomScale, onAtomHover, onAtomClick, sphereSegs }) {
+function AtomSpheres({ atoms, colorScheme, customColors, atomScale, onAtomHover, onAtomClick, sphereSegs }) {
   const groups = useMemo(() => {
     if (!atoms || atoms.length === 0) return []
     const map = new Map()
@@ -138,6 +138,7 @@ function AtomSpheres({ atoms, colorScheme, atomScale, onAtomHover, onAtomClick, 
       atoms={groupAtoms}
       radius={getAtomRadius(element)}
       colorScheme={colorScheme}
+      customColors={customColors}
       atomScale={atomScale}
       onAtomHover={onAtomHover}
       onAtomClick={onAtomClick}
@@ -146,7 +147,7 @@ function AtomSpheres({ atoms, colorScheme, atomScale, onAtomHover, onAtomClick, 
   ))
 }
 
-function AtomPoints({ atoms, colorScheme, atomScale }) {
+function AtomPoints({ atoms, colorScheme, customColors, atomScale }) {
   const ref = useRef()
 
   useLayoutEffect(() => {
@@ -161,7 +162,7 @@ function AtomPoints({ atoms, colorScheme, atomScale }) {
       pos[i * 3] = atom.x
       pos[i * 3 + 1] = atom.y
       pos[i * 3 + 2] = atom.z
-      c.set(getAtomColor(atom, colorScheme))
+      c.set(getAtomColor(atom, colorScheme, customColors))
       colors[i * 3] = c.r
       colors[i * 3 + 1] = c.g
       colors[i * 3 + 2] = c.b
@@ -171,7 +172,7 @@ function AtomPoints({ atoms, colorScheme, atomScale }) {
     points.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
     points.geometry.attributes.position.needsUpdate = true
     points.geometry.attributes.color.needsUpdate = true
-  }, [atoms, colorScheme])
+  }, [atoms, colorScheme, customColors])
 
   if (!atoms.length) return null
 
@@ -183,7 +184,7 @@ function AtomPoints({ atoms, colorScheme, atomScale }) {
   )
 }
 
-function Backbone({ atoms, colorScheme, atomScale }) {
+function Backbone({ atoms, colorScheme, customColors, atomScale }) {
   const chains = useMemo(() => {
     if (!atoms || atoms.length === 0) return []
     const map = new Map()
@@ -211,7 +212,7 @@ function Backbone({ atoms, colorScheme, atomScale }) {
       <mesh key={chainID}>
         <tubeGeometry args={[curve, segments, 0.15 * atomScale, 6, false]} />
         <meshStandardMaterial
-          color={getAtomColor({ chainID, element: 'C', resName: '' }, colorScheme)}
+          color={getAtomColor({ chainID, element: 'C', resName: '' }, colorScheme, customColors)}
         />
       </mesh>
     )
@@ -221,6 +222,7 @@ function Backbone({ atoms, colorScheme, atomScale }) {
 const MoleculeScene = memo(function MoleculeScene({
   atoms,
   colorScheme = 'element',
+  customColors,
   renderMode = 'both',
   onAtomHover,
   onAtomClick,
@@ -254,6 +256,7 @@ const MoleculeScene = memo(function MoleculeScene({
         <AtomSpheres
           atoms={atoms}
           colorScheme={colorScheme}
+          customColors={customColors}
           atomScale={atomScale}
           onAtomHover={onAtomHover}
           onAtomClick={onAtomClick}
@@ -261,9 +264,9 @@ const MoleculeScene = memo(function MoleculeScene({
         />
       )}
       {showSpheres && usePoints && (
-        <AtomPoints atoms={atoms} colorScheme={colorScheme} atomScale={atomScale} />
+        <AtomPoints atoms={atoms} colorScheme={colorScheme} customColors={customColors} atomScale={atomScale} />
       )}
-      {showBackbone && <Backbone atoms={atoms} colorScheme={colorScheme} atomScale={atomScale} />}
+      {showBackbone && <Backbone atoms={atoms} colorScheme={colorScheme} customColors={customColors} atomScale={atomScale} />}
       <SceneUI
         autoRotate={autoRotate}
         onCycleColorScheme={onCycleColorScheme}

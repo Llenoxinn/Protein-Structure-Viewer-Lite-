@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import ControlPanel from './components/ControlPanel'
 import MoleculeScene from './components/MoleculeScene'
 import AtomTooltip from './components/AtomTooltip'
 import { fetchPDB, parsePDB, centerAtoms } from './utils/pdbParser'
-import { setCustomColors } from './utils/colorSchemes'
 
 export default function App() {
   const [pdbId, setPdbId] = useState('1CRN')
@@ -23,7 +22,12 @@ export default function App() {
   const [atomScale, setAtomScale] = useState(1)
   const [autoRotate, setAutoRotate] = useState(false)
   const [customElementColors, setCustomElementColors] = useState({})
-  const [customChainColors, setCustomChainColors] = useState([])
+  const [customChainColors, setCustomChainColors] = useState({})
+
+  const customColors = useMemo(
+    () => ({ elements: customElementColors, chains: customChainColors }),
+    [customElementColors, customChainColors],
+  )
 
   const exportRef = useRef(null)
 
@@ -35,11 +39,6 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-accent', accent)
   }, [accent])
-
-  // Push custom colors to colorSchemes module
-  useEffect(() => {
-    setCustomColors(customElementColors, customChainColors)
-  }, [customElementColors, customChainColors])
 
   const handleLoad = useCallback(async () => {
     setLoading(true)
@@ -162,6 +161,7 @@ export default function App() {
           <MoleculeScene
             atoms={atoms}
             colorScheme={colorScheme}
+            customColors={customColors}
             renderMode={renderMode}
             onAtomHover={setHoveredAtom}
             onAtomClick={handleAtomClick}

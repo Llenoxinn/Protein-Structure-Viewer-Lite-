@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react'
-import { ELEMENT_COLORS, CHAIN_COLORS } from '../utils/colorSchemes'
+import { ELEMENT_COLORS, getChainDefaultColor } from '../utils/colorSchemes'
 
 const PDB_EXAMPLES = [
   { id: '1CRN', name: 'Crambin' },
@@ -73,14 +73,10 @@ export default function ControlPanel({
   )
 
   const updateChainColor = useCallback(
-    (idx, color) => {
-      setCustomChainColors((prev) => {
-        const next = [...prev]
-        next[idx] = color
-        return next
-      })
+    (ch, color) => {
+      setCustomChainColors((prev) => ({ ...prev, [ch]: color }))
     },
-    [],
+    [setCustomChainColors],
   )
 
   const isDark = theme === 'dark'
@@ -333,12 +329,12 @@ export default function ControlPanel({
               <div className="space-y-1.5">
                 <p className="text-[10px] text-gray-400 dark:text-white/30">Chains</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {moleculeInfo.chains.map((ch, i) => (
+                  {moleculeInfo.chains.map((ch) => (
                     <label key={ch} className="flex items-center gap-1 cursor-pointer">
                       <input
                         type="color"
-                        value={customChainColors[i] || CHAIN_COLORS[i % CHAIN_COLORS.length]}
-                        onChange={(e) => updateChainColor(i, e.target.value)}
+                        value={customChainColors[ch] || getChainDefaultColor(ch)}
+                        onChange={(e) => updateChainColor(ch, e.target.value)}
                         className="w-4 h-4 rounded cursor-pointer border-0 p-0"
                       />
                       <span className="font-mono text-[10px] text-gray-500 dark:text-white/40">
