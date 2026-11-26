@@ -127,10 +127,6 @@ export default function App() {
     }
   }, [])
 
-  const handleAtomClick = useCallback((atom) => {
-    console.log(atom)
-  }, [])
-
   const isDark = theme === 'dark'
 
   return (
@@ -170,7 +166,6 @@ export default function App() {
             customColors={customColors}
             renderMode={renderMode}
             onAtomHover={setHoveredAtom}
-            onAtomClick={handleAtomClick}
             sceneBg={isDark ? '#0d0d0f' : '#f8f9fa'}
             autoRotate={autoRotate}
             atomScale={atomScale}
@@ -209,7 +204,7 @@ export default function App() {
         )}
       </div>
 
-      <AtomTooltip atom={hoveredAtom} theme={theme} />
+      <AtomTooltip atom={hoveredAtom} />
     </div>
   )
 }

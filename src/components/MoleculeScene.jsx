@@ -27,7 +27,7 @@ function ExportHelper({ exportRef }) {
   return null
 }
 
-function SceneUI({ autoRotate, onCycleColorScheme, onCycleRenderMode, onResetCamera }) {
+function SceneUI({ onCycleColorScheme, onCycleRenderMode }) {
   const { camera, controls } = useThree()
 
   const resetCamera = useCallback(() => {
@@ -36,8 +36,7 @@ function SceneUI({ autoRotate, onCycleColorScheme, onCycleRenderMode, onResetCam
       controls.target.set(0, 0, 0)
       controls.update()
     }
-    onResetCamera?.()
-  }, [camera, controls, onResetCamera])
+  }, [camera, controls])
 
   useEffect(() => {
     const handler = (e) => {
@@ -72,7 +71,7 @@ function SceneUI({ autoRotate, onCycleColorScheme, onCycleRenderMode, onResetCam
   )
 }
 
-function AtomGroup({ atoms, radius, colorScheme, customColors, atomScale, onAtomHover, onAtomClick, sphereSegs }) {
+function AtomGroup({ atoms, radius, colorScheme, customColors, atomScale, onAtomHover, sphereSegs }) {
   const ref = useRef()
   const count = atoms.length
   const r = radius * atomScale
@@ -108,12 +107,6 @@ function AtomGroup({ atoms, radius, colorScheme, customColors, atomScale, onAtom
     if (onAtomHover) onAtomHover(null)
   }, [onAtomHover])
 
-  const handleClick = useCallback((e) => {
-    e.stopPropagation()
-    const atom = atoms[e.instanceId]
-    if (atom && onAtomClick) onAtomClick(atom)
-  }, [atoms, onAtomClick])
-
   if (count === 0) return null
 
   return (
@@ -122,7 +115,6 @@ function AtomGroup({ atoms, radius, colorScheme, customColors, atomScale, onAtom
       args={[null, null, count]}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
-      onClick={handleClick}
     >
       <sphereGeometry args={[r, segs, segs]} />
       <meshStandardMaterial />
@@ -130,7 +122,7 @@ function AtomGroup({ atoms, radius, colorScheme, customColors, atomScale, onAtom
   )
 }
 
-function AtomSpheres({ atoms, colorScheme, customColors, atomScale, onAtomHover, onAtomClick, sphereSegs }) {
+function AtomSpheres({ atoms, colorScheme, customColors, atomScale, onAtomHover, sphereSegs }) {
   const groups = useMemo(() => {
     if (!atoms || atoms.length === 0) return []
     const map = new Map()
@@ -151,7 +143,6 @@ function AtomSpheres({ atoms, colorScheme, customColors, atomScale, onAtomHover,
       customColors={customColors}
       atomScale={atomScale}
       onAtomHover={onAtomHover}
-      onAtomClick={onAtomClick}
       sphereSegs={sphereSegs}
     />
   ))
@@ -233,14 +224,12 @@ const MoleculeScene = memo(function MoleculeScene({
   customColors,
   renderMode = 'both',
   onAtomHover,
-  onAtomClick,
   sceneBg = '#0d0d0f',
   autoRotate = false,
   atomScale = 1,
   exportRef,
   onCycleColorScheme,
   onCycleRenderMode,
-  onResetCamera,
 }) {
   const hasAtoms = atoms && atoms.length > 0
   const showSpheres = hasAtoms && (renderMode === 'spheres' || renderMode === 'both')
@@ -267,7 +256,6 @@ const MoleculeScene = memo(function MoleculeScene({
           customColors={customColors}
           atomScale={atomScale}
           onAtomHover={onAtomHover}
-          onAtomClick={onAtomClick}
           sphereSegs={sphereSegs}
         />
       )}
@@ -276,10 +264,8 @@ const MoleculeScene = memo(function MoleculeScene({
       )}
       {showBackbone && <Backbone atoms={atoms} colorScheme={colorScheme} customColors={customColors} atomScale={atomScale} />}
       <SceneUI
-        autoRotate={autoRotate}
         onCycleColorScheme={onCycleColorScheme}
         onCycleRenderMode={onCycleRenderMode}
-        onResetCamera={onResetCamera}
       />
       <ExportHelper exportRef={exportRef} />
       {import.meta.env.DEV && <Stats />}
