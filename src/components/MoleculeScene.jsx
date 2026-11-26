@@ -5,11 +5,12 @@ import * as THREE from 'three'
 import { getAtomColor, getAtomRadius } from '../utils/colorSchemes'
 
 function ExportHelper({ exportRef }) {
-  const { gl } = useThree()
+  const { gl, scene, camera } = useThree()
   useEffect(() => {
     if (exportRef) {
       exportRef.current = {
         downloadPNG: () => {
+          gl.render(scene, camera)
           const link = document.createElement('a')
           link.download = 'structure.png'
           link.href = gl.domElement.toDataURL('image/png')
@@ -22,7 +23,7 @@ function ExportHelper({ exportRef }) {
     return () => {
       if (exportRef) exportRef.current = null
     }
-  }, [gl, exportRef])
+  }, [gl, scene, camera, exportRef])
   return null
 }
 
@@ -40,6 +41,15 @@ function SceneUI({ autoRotate, onCycleColorScheme, onCycleRenderMode, onResetCam
 
   useEffect(() => {
     const handler = (e) => {
+      if (
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey ||
+        e.target?.isContentEditable ||
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target?.tagName)
+      ) {
+        return
+      }
       if (e.key === 'r' || e.key === 'R') resetCamera()
       if (e.key === 'e' || e.key === 'E') onCycleColorScheme?.()
       if (e.key === 'm' || e.key === 'M') onCycleRenderMode?.()
@@ -53,7 +63,7 @@ function SceneUI({ autoRotate, onCycleColorScheme, onCycleRenderMode, onResetCam
       <div className="absolute top-3 right-3 flex gap-2 z-10">
         <button
           onClick={resetCamera}
-          className="px-2.5 py-1 text-[10px] rounded bg-white/10 dark:bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
+          className="px-2.5 py-1 text-[10px] rounded bg-black/5 text-gray-700 hover:bg-black/10 dark:bg-white/10 dark:text-white/60 dark:hover:bg-white/20 transition-colors"
         >
           Reset Camera
         </button>
@@ -251,7 +261,7 @@ const MoleculeScene = memo(function MoleculeScene({
     >
       <ambientLight intensity={0.4} />
       <directionalLight position={[20, 20, 20]} intensity={1.2} />
-      <OrbitControls enableDamping dampingFactor={0.15} autoRotate={autoRotate} autoRotateSpeed={2} />
+      <OrbitControls makeDefault enableDamping dampingFactor={0.15} autoRotate={autoRotate} autoRotateSpeed={2} />
       {showSpheres && !usePoints && (
         <AtomSpheres
           atoms={atoms}
