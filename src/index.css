@@ -79,6 +79,10 @@ kbd,
   font-family: 'Geist Mono', 'SF Mono', 'JetBrains Mono', ui-monospace, monospace;
 }
 
+.font-serif-editorial {
+  font-family: 'Instrument Serif', Georgia, serif;
+}
+
 .kbd-key {
   @apply inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded border border-[#EAEAEA] dark:border-white/15 bg-[#F7F6F3] dark:bg-white/[0.06] font-mono text-[10px] leading-none text-[#555452] dark:text-white/60;
 }
