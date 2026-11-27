@@ -19,7 +19,7 @@ function computeFitDistance(atoms) {
   return (radius / Math.sin(halfFovRad)) * 1.18
 }
 
-function SceneController({ fitDistance, sceneRef, onCycleColorScheme, onCycleRenderMode }) {
+function SceneController({ fitDistance, sceneRef, onCycleColorScheme, onCycleRenderMode, enableShortcuts = true }) {
   const { gl, scene, camera, controls } = useThree()
 
   const resetCamera = useCallback(() => {
@@ -57,6 +57,7 @@ function SceneController({ fitDistance, sceneRef, onCycleColorScheme, onCycleRen
   }, [gl, scene, camera, sceneRef, resetCamera])
 
   useEffect(() => {
+    if (!enableShortcuts) return
     const handler = (e) => {
       if (
         e.metaKey ||
@@ -73,7 +74,7 @@ function SceneController({ fitDistance, sceneRef, onCycleColorScheme, onCycleRen
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [resetCamera, onCycleColorScheme, onCycleRenderMode])
+  }, [enableShortcuts, resetCamera, onCycleColorScheme, onCycleRenderMode])
 
   return null
 }
@@ -251,6 +252,8 @@ const MoleculeScene = memo(function MoleculeScene({
   sceneRef,
   onCycleColorScheme,
   onCycleRenderMode,
+  enableShortcuts = true,
+  enableZoom = true,
 }) {
   const hasAtoms = atoms && atoms.length > 0
   const showSpheres = hasAtoms && (renderMode === 'spheres' || renderMode === 'both')
@@ -279,6 +282,7 @@ const MoleculeScene = memo(function MoleculeScene({
         makeDefault
         enableDamping
         dampingFactor={0.12}
+        enableZoom={enableZoom}
         autoRotate={autoRotate}
         autoRotateSpeed={1.6}
       />
@@ -303,6 +307,7 @@ const MoleculeScene = memo(function MoleculeScene({
         sceneRef={sceneRef}
         onCycleColorScheme={onCycleColorScheme}
         onCycleRenderMode={onCycleRenderMode}
+        enableShortcuts={enableShortcuts}
       />
     </Canvas>
   )
