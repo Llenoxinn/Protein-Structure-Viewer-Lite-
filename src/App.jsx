@@ -6,7 +6,7 @@ import LandingPage from './components/LandingPage'
 import { fetchPDB, parsePDB, centerAtoms } from './utils/pdbParser'
 
 export default function App() {
-  const [view, setView] = useState('viewer')
+  const [view, setView] = useState('landing')
   const [pdbId, setPdbId] = useState('1CRN')
   const [atoms, setAtoms] = useState([])
   const [moleculeInfo, setMoleculeInfo] = useState(null)
@@ -136,6 +136,14 @@ export default function App() {
     setCustomChainColors({})
   }, [])
 
+  const handleSelectPreviewPdb = useCallback(
+    (targetId) => {
+      setPdbId(targetId)
+      handleLoad(targetId)
+    },
+    [handleLoad],
+  )
+
   const handleLaunchViewer = useCallback(
     (targetId) => {
       setView('viewer')
@@ -152,6 +160,11 @@ export default function App() {
   if (view === 'landing') {
     return (
       <LandingPage
+        atoms={atoms}
+        pdbId={pdbId}
+        moleculeInfo={moleculeInfo}
+        loading={loading}
+        onSelectPreviewPdb={handleSelectPreviewPdb}
         onLaunchViewer={handleLaunchViewer}
         theme={theme}
         toggleTheme={toggleTheme}
